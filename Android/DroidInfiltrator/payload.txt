@@ -1,0 +1,223 @@
+#!/bin/bash
+#
+# Title: 	    DroidInfiltrator
+# Author: 	    Sven Herz
+# Version: 	    1.1.2
+# Target:	    Android
+# Description:	Port scanning and monitoring of network packets of an Android device using Nmap and Tcpdump.
+# Attackmode:	ECM_ETHERNET
+# Dependencies: metasploit-framework
+
+
+
+
+# Initialization
+#
+LED SETUP
+REQUIRETOOL metasploit-framework
+ATTACKMODE ECM_ETHERNET
+mount /dev/nandf /root/udisk/
+
+ORIGINAL_SWITCH=$SWITCH_POSITION
+PAYLOAD_DIR=/root/udisk/payloads/$SWITCH_POSITION
+LOOTBASE=/root/udisk/loot/DroidInfiltrator/
+
+# Sets the termination condition for TCPDUMP
+#
+MAXTCPDUMPCOUNT=200
+
+# Sets the min and max port for the Nmap scan
+#
+MINPORT=1
+MAXPORT=2000
+
+GET TARGET_IP
+GET TARGET_HOSTNAME
+
+COUNT=$(ls -lad $LOOTBASE/$TARGET_HOSTNAME* | wc -l)
+COUNT=$((COUNT+1))
+LOOTDIR=$LOOTBASE/$TARGET_HOSTNAME-$COUNT
+mkdir -p $LOOTDIR
+
+MSF_DIR=/tools/metasploit-framework
+
+
+
+# Environment informations:
+#
+echo "PAYLOAD_DIR: $PAYLOAD_DIR" >> $LOOTDIR/DILog.txt
+echo "LOOTDIR: $LOOTDIR" >> $LOOTDIR/DILog.txt
+echo "TARGET_IP: $TARGET_IP" >> $LOOTDIR/DILog.txt
+echo "TARGET_HOSTNAME: $TARGET_HOSTNAME" >> $LOOTDIR/DILog.txt
+
+
+
+
+# Synchronize file system
+#
+SYNC ()
+{
+    echo "Start SYNC..." >> $LOOTDIR/DILog.txt
+    sync; sleep 1; sync
+    echo "Finished SYNC!" >> $LOOTDIR/DILog.txt
+}
+
+
+# Obtain network interfaces information
+#
+IP() {
+    LED STAGE1
+
+    echo -e "\n\n" >> $LOOTDIR/DILog.txt
+    echo "---------------------------------------- Netzwerkinterfaces ----------------------------------------" >> $LOOTDIR/DILog.txt
+    echo -e "\n" >> $LOOTDIR/DILog.txt
+
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "---------------------------------------- Netzwerkinterfaces ----------------------------------------" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n" >> $LOOTDIR/NetworkLog.txt
+
+
+    echo "export HOME=/root" >> $LOOTDIR/DILog.txt
+    export HOME=/root
+
+    echo "Start ip link show..." >> $LOOTDIR/DILog.txt
+    ip link show >> $LOOTDIR/NetworkLog.txt
+    echo "Finished ip link show!" >> $LOOTDIR/DILog.txt
+
+    SYNC
+}
+
+
+# Display interface configuration
+#
+IPCONFIG() {
+    LED STAGE2
+
+    echo -e "\n\n" >> $LOOTDIR/DILog.txt
+    echo "---------------------------------------- Interface Configuration ----------------------------------------" >> $LOOTDIR/DILog.txt
+    echo -e "\n" >> $LOOTDIR/DILog.txt
+
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "---------------------------------------- Interface Configuration ----------------------------------------" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n" >> $LOOTDIR/NetworkLog.txt
+
+
+    echo "export HOME=/root" >> $LOOTDIR/DILog.txt
+    export HOME=/root
+
+    echo "Start ifconfig..." >> $LOOTDIR/DILog.txt
+    ifconfig >> $LOOTDIR/NetworkLog.txt
+    echo "Finished ifconfig!" >> $LOOTDIR/DILog.txt
+
+    SYNC
+}
+
+
+# An Nmap port scan on the target IP.
+#
+NMAPPORTSCAN() {
+	LED STAGE3
+
+    echo -e "\n\n" >> $LOOTDIR/DILog.txt
+    echo "---------------------------------------- Nmap-Portscan ----------------------------------------" >> $LOOTDIR/DILog.txt
+    echo -e "\n" >> $LOOTDIR/DILog.txt
+
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "---------------------------------------- Nmap-Portscan ----------------------------------------" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n" >> $LOOTDIR/NetworkLog.txt
+
+
+    echo "export HOME=/root" >> $LOOTDIR/DILog.txt
+    export HOME=/root
+
+    echo "cd $MSF_DIR" >> $LOOTDIR/DILog.txt
+    cd $MSF_DIR
+
+    echo "Start nmap scan..." >> $LOOTDIR/DILog.txt
+    ./msfconsole -q -x "nmap -T5 -sV -vvv --reason $TARGET_IP -p $MINPORT-$MAXPORT -Pn; run; exit" >> $LOOTDIR/NetworkLog.txt
+    echo "Finished nmap scan!" >> $LOOTDIR/DILog.txt
+    
+	SYNC
+}
+
+
+# Capture network traffic using Tcpdump
+#
+TCPDUMP() {
+    LED STAGE4
+
+    echo -e "\n\n" >> $LOOTDIR/DILog.txt
+    echo "---------------------------------------- TCP-Dump ----------------------------------------" >> $LOOTDIR/DILog.txt
+    echo -e "\n" >> $LOOTDIR/DILog.txt
+
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "---------------------------------------- TCP-Dump ----------------------------------------" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n" >> $LOOTDIR/NetworkLog.txt
+
+
+    echo "export HOME=/root" >> $LOOTDIR/DILog.txt
+    export HOME=/root
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "TARGET_IP: $TARGET_IP" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+
+    echo "Start tcpdump -vvv -c $MAXTCPDUMPCOUNT" >> $LOOTDIR/DILog.txt
+    tcpdump -vvv -c $MAXTCPDUMPCOUNT >> $LOOTDIR/NetworkLog.txt
+    echo "Finished tcpdump!" >> $LOOTDIR/DILog.txt
+
+    SYNC
+}
+
+
+# Capture network traffic in hexadecimal format using Tcpdump
+#
+TCPDUMPHEX() {
+    LED STAGE5
+
+    echo -e "\n\n" >> $LOOTDIR/DILog.txt
+    echo "---------------------------------------- TCP-Dump-HEX ----------------------------------------" >> $LOOTDIR/DILog.txt
+    echo -e "\n" >> $LOOTDIR/DILog.txt
+
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "---------------------------------------- TCP-Dump-HEX ----------------------------------------" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n" >> $LOOTDIR/NetworkLog.txt
+
+
+    echo "export HOME=/root" >> $LOOTDIR/DILog.txt
+    export HOME=/root
+
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+    echo "TARGET_IP: $TARGET_IP" >> $LOOTDIR/NetworkLog.txt
+    echo -e "\n\n" >> $LOOTDIR/NetworkLog.txt
+
+    echo "Start tcpdump -X -c $MAXTCPDUMPCOUNT" >> $LOOTDIR/DILog.txt
+    tcpdump -X -c $MAXTCPDUMPCOUNT >> $LOOTDIR/NetworkLog.txt
+    echo "Finished tcpdump!" >> $LOOTDIR/DILog.txt
+
+    SYNC
+}
+
+
+while true
+do
+    #~~~~   Stages of network forensics   ~~~~
+    IP
+    IPCONFIG
+	NMAPPORTSCAN
+    TCPDUMP
+    TCPDUMPHEX
+
+    #~~~~   Clean up   ~~~~
+	SYNC
+    LED FINISH
+	exit 1
+done
+
+
+

